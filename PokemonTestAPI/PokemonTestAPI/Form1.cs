@@ -14,31 +14,58 @@ namespace PokemonTestAPI
 {
     public partial class Form1 : Form
     {
+        PokeClass_Broad CurrentPokemon = null;
+
         public Form1()
         {
             InitializeComponent();
         }
 
-        private async void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object sender, EventArgs e)
+        {
+            ChangeCurrentPokemon(txt_Species.Text);
+        }
+
+        private void btn_Evolve_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string nextEvolveName = CurrentPokemon.NextNameInChain;
+                if (nextEvolveName != CurrentPokemon.Name)
+                {
+                    ChangeCurrentPokemon(nextEvolveName);
+                }
+                else
+                {
+                    MessageBox.Show("The current pokemon is at max evolution.");
+                }
+            }
+            catch
+            {
+                MessageBox.Show("There must be a valid pokemon to evolve.");
+            }
+                
+        }
+
+        private async void ChangeCurrentPokemon(string Name)
         {
             listBox1.Items.Clear();
             try
             {
-                PokemonSpecies p = await DataFetcher.GetNamedApiObject<PokemonSpecies>(txt_Species.Text);
-                listBox1.Items.Add("Base Happiness: " + p.BaseHappiness);
-                listBox1.Items.Add("Capture Rate: " + p.CaptureRate);
-                if (p.Habitat != null)
-                {
-                    listBox1.Items.Add("Habitat: " + p.Habitat.Name);
-                }
+                PokemonSpecies p = await DataFetcher.GetNamedApiObject<PokemonSpecies>(Name);
+                EvolutionChain EvChain = await DataFetcher.GetApiObject<EvolutionChain>(p.EvolutionChain.Url);
+                CurrentPokemon = new PokeClass_Broad(p.Name, EvChain, p.CaptureRate.ToString(), p.GrowthRate.Name, p.FlavorTexts, p.Habitat.Name, p.EggGroups);
 
-                listBox1.Items.Add("Growth Rate: " + p.GrowthRate.Name);
-                listBox1.Items.Add("Flavor Text: " + p.FlavorTexts[0].FlavorText);
-                listBox1.Items.Add("Egg Group: " + p.EggGroups[0].Name);
+                listBox1.Items.Add("Base Happiness: " + CurrentPokemon.Name);
+                listBox1.Items.Add("Capture Rate: " + CurrentPokemon.CaptureRate);
+                listBox1.Items.Add("Growth Rate: " + CurrentPokemon.GrowthRate);
+                listBox1.Items.Add("Flavor Text: " + CurrentPokemon.FlavorText);
+                listBox1.Items.Add("Egg Group: " + CurrentPokemon.EggGroup);
+                listBox1.Items.Add("Habitat: " + CurrentPokemon.Habitat);
             }
             catch
             {
-                MessageBox.Show("Please input an appropriate string.");
+                MessageBox.Show("Please input a pokemon species in lowercase format.");
             }
         }
     }
